@@ -53,6 +53,7 @@ const char* sensorID_5 = "S005"; //SENSOR 2 ID -  GasSensor
  
 WiFiClient client;
 //Bulb,Fan pinmode
+int PIR = 13;
 int bulbrelay1Pin = 14;
 int fanrelay1Pin = 12;
 int pumprelayPin = 15;
@@ -104,7 +105,7 @@ void setup()
     oled.begin(&Adafruit128x64, I2C_ADDRESS);
   #endif // RST_PIN >= 0
     //end yetu
-
+pinMode(PIR, INPUT);
 pinMode(bulbrelay1Pin, OUTPUT);// define a pin as output for relay on or off
 pinMode(fanrelay1Pin, OUTPUT);// define a pin as output for relay on or off
 }
@@ -118,6 +119,9 @@ pinMode(fanrelay1Pin, OUTPUT);// define a pin as output for relay on or off
     temperature();
     gasSensor();
     photoResistor();
+    waterLevel();
+    PIRfun();
+    delay(5000);
     //delay(2000);      // thingspeak needs minimum 15 sec delay between updates.
 
 //  send_to_cloud(sensorID_1, 24); //SEDNING SENSOR 1 DATA
@@ -139,7 +143,7 @@ pinMode(fanrelay1Pin, OUTPUT);// define a pin as output for relay on or off
 
   //send_to_cloud(sensorID_5, gasSensor()); //SEDNING SENSOR 2 DATA
   
-  delay(10000); //SENDING SENSOR DATA EVERY 10 SECONDS
+   //SENDING SENSOR DATA EVERY 10 SECONDS
 }
 void send_to_cloud(String sens_id, int sense_val) {
   
@@ -205,10 +209,10 @@ void temperature(){
     Serial.println(F("Failed to read from DHT sensor!"));
     return;
   }
-  if(t < 27){
+  if(t < 34){
     digitalWrite(bulbrelay1Pin, LOW);   // turn the LED on (HIGH is the voltage level)
     digitalWrite(fanrelay1Pin, LOW);
-  }else if(t >= 26){
+  }else if(t >= 35){
     digitalWrite(fanrelay1Pin, HIGH);
     digitalWrite(bulbrelay1Pin, HIGH);
   }else{
@@ -287,3 +291,19 @@ void photoResistor(){
   oled.println(F("A0"));
   send_to_cloud(sensorID_4, voltage);
   }
+
+void waterLevel(){
+  int volume = analogRead(A0);
+  send_to_cloud(sensorID_3, volume);
+  if(volume>=500){
+    digitalWrite(pumprelayPin, LOW);
+  }else{
+    digitalWrite(pumprelayPin, HIGH);
+  }
+  Serial.println(volume);   
+}         
+
+void PIRfun(){
+  int motion =  digitalRead(PIR);
+  send_to_cloud(sensorID_2, motion);
+}
